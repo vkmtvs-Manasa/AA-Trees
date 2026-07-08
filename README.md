@@ -42,16 +42,7 @@ Removes consecutive right horizontal links by performing a left rotation and inc
 | Delete    | O(log n)   |
 | Traversal | O(n)       |
 
-## Project Structure
 
-```text
-AA-Trees/
-│
-├── main.cpp
-├── AATree.cpp
-├── AATree.h
-└── README.md
-```
 
 ## Compilation and Execution
 
