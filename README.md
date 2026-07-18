@@ -1,84 +1,82 @@
-# AA-Trees
-# AA Trees in C++
+# AA Trees Implementation in C
 
 ## Overview
+This project implements an **AA Tree**, a balanced binary search tree, from scratch in **C**. It was developed as part of the **Data Structures and Algorithms** coursework at **Indian Institute of Technology Ropar**.
 
-This project implements an **AA Tree**, a self-balancing Binary Search Tree (BST) that maintains efficient search, insertion, and deletion operations. AA Trees simplify the balancing logic of Red-Black Trees by using only two balancing operations: **Skew** and **Split**.
+The implementation supports insertion, deletion, search, and balancing operations while maintaining logarithmic time complexity.
+
+---
 
 ## Features
 
-* Insert elements into the AA Tree
-* Delete elements from the AA Tree
-* Search for elements
-* Maintain balanced tree structure automatically
-* Inorder Traversal
-* Efficient operations with O(log n) time complexity
+- AA Tree implementation from scratch
+- Insertion operation
+- Deletion operation
+- Search operation
+- Skew operation
+- Split operation
+- Balanced tree maintenance
+- Performance analysis
 
-## Data Structure
+---
 
-An AA Tree is a balanced BST where each node contains:
+## Technologies Used
 
-* Key value
-* Level information
-* Left child pointer
-* Right child pointer
+- C
+- Data Structures & Algorithms
 
-### Balancing Operations
+---
 
-#### Skew
+## Project Structure
 
-Removes left horizontal links by performing a right rotation.
+```
+AA-Trees/
+├── images/
+├── README.md
+├── Report.pdf
+└── aa_tree.c
+```
 
-#### Split
-
-Removes consecutive right horizontal links by performing a left rotation and increasing the level.
+---
 
 ## Time Complexity
 
 | Operation | Complexity |
-| --------- | ---------- |
-| Search    | O(log n)   |
-| Insert    | O(log n)   |
-| Delete    | O(log n)   |
-| Traversal | O(n)       |
+|----------|------------|
+| Search | O(log n) |
+| Insert | O(log n) |
+| Delete | O(log n) |
 
+---
 
+## Report
 
-## Compilation and Execution
+The detailed project report is available in:
 
-### Using g++
+- `Report.pdf`
 
-```bash
-g++ main.cpp -o aatree
-./aatree
-```
+---
 
-## Sample Operations
+## Screenshots
 
-```text
-1. Insert
-2. Delete
-3. Search
-4. Display Inorder
-5. Exit
-```
+Project screenshots and diagrams are available inside the `images` folder.
 
-## Applications
-
-* Database indexing
-* Memory management systems
-* Symbol tables
-* Dictionary implementations
-* Ordered data storage
+---
 
 ## Learning Outcomes
 
-Through this project, I gained practical experience with:
+- Balanced Binary Search Trees
+- Recursive Programming
+- Tree Rotations
+- Skew and Split Operations
+- Performance Analysis
 
-* Self-balancing Binary Search Trees
-* Tree rotations
-* Dynamic memory management in C++
-* Efficient data structure implementation
-* Algorithm analysis and optimization
+---
 
+## Author
 
+**Manasa Panugothu**
+
+B.Tech Mathematics and Computing
+
+Indian Institute of Technology Ropar
