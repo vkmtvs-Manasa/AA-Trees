@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS201 - AA Trees Implementation</title>
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #312e81 50%, #4c1d95 100%);
+            --text-main: #ffffff;
+            --text-muted: #cbd5e1;
+            --accent-primary: #38bdf8;
+            --accent-secondary: #f472b6;
+            --accent-gradient: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --code-bg: rgba(0, 0, 0, 0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden; /* Hides scrollbars on body */
+        }
+
+        /* --- Background FX --- */
+        .background-fx { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; background: var(--bg-dark); overflow: hidden; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; animation: float 20s infinite ease-in-out; }
+        .orb-1 { width: 600px; height: 600px; background: #4f46e5; top: -100px; left: -100px; }
+        .orb-2 { width: 500px; height: 500px; background: #db2777; bottom: -100px; right: -100px; animation-delay: -5s; }
+        .orb-3 { width: 300px; height: 300px; background: #0ea5e9; top: 40%; left: 40%; opacity: 0.2; animation-delay: -10s; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(0, 100px); } }
+
+        /* --- Layout --- */
+        .slide-deck { 
+            height: 100vh; 
+            width: 100vw; 
+            overflow-y: scroll; 
+            scroll-snap-type: y mandatory; 
+            scroll-behavior: smooth; 
+            
+            /* Hide Scrollbars but keep functionality */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        /* Hide Scrollbar for Chrome, Safari and Opera */
+        .slide-deck::-webkit-scrollbar {
+            display: none;
+        }
+
+        section {
+            height: 100vh; width: 100vw; scroll-snap-align: start;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 2rem 5%; position: relative;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* --- Typography --- */
+        h1 { font-size: 4rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; text-align: center; letter-spacing: -2px; }
+        h2 { font-size: 3rem; font-weight: 700; margin-bottom: 2rem; text-align: center; letter-spacing: -1px; }
+        .gradient-text { background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-block; }
+        p, ul, li { font-size: 1.1rem; color: var(--text-muted); line-height: 1.6; }
+        ul { list-style: none; }
+
+        /* --- Components --- */
+        .card {
+            background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); padding: 2rem; border-radius: 24px; box-shadow: var(--glass-shadow); width: 100%;
+        }
+        .tag {
+            display: inline-block; padding: 0.5rem 1rem; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; font-size: 0.9rem; margin: 0.2rem;
+            color: var(--accent-primary);
+        }
+        .comparison-row {
+            display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .comparison-row:last-child { border-bottom: none; }
+
+        /* --- Grid --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; width: 100%; max-width: 1200px; align-items: center; }
+        @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 2rem; text-align: center; } }
+
+        /* --- Team Grid (Slide 1) --- */
+        .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; width: 100%; max-width: 900px; }
+        .team-member {
+            display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem;
+            background: rgba(255,255,255,0.05); border-radius: 12px; border-left: 3px solid var(--accent-primary);
+            transition: transform 0.2s;
+        }
+        .team-member:hover { transform: translateX(10px); background: rgba(255,255,255,0.08); }
+        .member-name { font-weight: 600; color: #fff; }
+        .member-id { font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); font-size: 0.95rem; }
+
+        /* --- Animations --- */
+        .animate-up { opacity: 0; transform: translateY(40px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); filter: blur(5px); }
+        section.active .animate-up { opacity: 1; transform: translateY(0); filter: blur(0); }
+        .d-100 { transition-delay: 100ms; } .d-200 { transition-delay: 200ms; } .d-300 { transition-delay: 300ms; } .d-400 { transition-delay: 400ms; }
+
+        /* --- UI Elements --- */
+        .diagram-container {
+            width: 100%; height: 200px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 20px;
+            display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2);
+            color: var(--text-muted); flex-direction: column; text-align: center;
+        }
+        .code-block { background: var(--code-bg); padding: 1.5rem; border-radius: 12px; font-family: 'JetBrains Mono', monospace; border-left: 4px solid var(--accent-secondary); color: #e2e8f0; white-space: pre; overflow-x: auto; }
+        
+        /* Navigation Hint Styling */
+        .nav-hint { position: fixed; bottom: 30px; right: 30px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 30px; backdrop-filter: blur(5px); color: rgba(255,255,255,0.7); animation: bounce 2s infinite; z-index: 50; border: 1px solid rgba(255,255,255,0.1); }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        .progress { position: fixed; bottom: 0; left: 0; height: 6px; background: var(--accent-gradient); width: 0%; transition: width 0.5s ease; z-index: 100; }
+    </style>
+</head>
+<body>
+
+<div class="background-fx"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+<div class="progress" id="progressBar"></div>
+<div class="nav-hint">Scroll &darr;</div>
+
+<div class="slide-deck" id="deck">
+
+    <!-- SLIDE 1: Title & Team Intro -->
+    <section class="active">
+        <div class="animate-up" style="margin-bottom: 2rem;">
+            <span style="padding: 0.5rem 1.5rem; border: 1px solid var(--accent-primary); border-radius: 50px; color: var(--accent-primary); font-weight: 600; background: rgba(56, 189, 248, 0.1);">CS201 - DATA STRUCTURES</span>
+        </div>
+        <h1 class="animate-up d-100">Implementation Of <br><span class="gradient-text">AA Trees</span></h1>
+        <div class="animate-up d-200" style="margin-bottom: 3rem;">
+            <p style="font-size: 1.2rem; color: var(--text-muted);">Team ID / Group No: <span style="color: white; font-weight: bold;">16</span></p>
+        </div>
+        <div class="card animate-up d-300" style="width: 100%; max-width: 1000px;">
+            <div class="team-grid">
+                <div class="team-member"><span style="font-size: 1.2rem;" class="member-name">Poorna Vadhan</span><span style="font-size: 1rem;" class="member-id">2024MCB1306</span></div>
+                <div class="team-member"><span style="font-size: 1.2rem;" class="member-name">Sai Manogna</span><span style="font-size: 1rem;" class="member-id">2024MCB1293</span></div>
+                <div class="team-member"><span style="font-size: 1.2rem;" class="member-name">Samhitha</span><span style="font-size: 1rem;" class="member-id">2024MCB1291</span></div>
+                <div class="team-member"><span style="font-size: 1.2rem;" class="member-name">Manasa</span><span style="font-size: 1rem;" class="member-id">2024MCB1308</span></div>
+            </div>
+        </div>
+    </section>
+    <!-- SLIDE 7: Introduction & Core Invariants (Red-Black Context) -->
+    <section>
+        <h2 class="animate-up">Red-Black Tree <span class="gradient-text">Invariants</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Definition -->
+            <div class="animate-up d-100">
+                <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">What is a Red-Black Tree?</h3>
+                <p style="margin-bottom: 1.5rem;">
+                    A self-balancing BST that guarantees logarithmic height <strong style="color:white;">O(log n)</strong>.
+                </p>
+                <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--accent-secondary);">
+                    <p style="margin:0; font-size:1rem;">
+                        Balance is maintained by assigning a <span style="color:#ef4444; font-weight:bold;">Color</span> (Red or Black) to every node and enforcing strict structural rules.
+                    </p>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <h4 style="color:white; margin-bottom:0.5rem;">Why it matters?</h4>
+                    <ul style="padding-left: 1rem; font-size: 1rem; color: var(--text-muted);">
+                        <li>Guarantees O(log n) for Search, Insert, Delete.</li>
+                        <li>Prevents worst-case skewing.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: The 5 Invariants -->
+            <div class="card animate-up d-200" style="padding: 2rem;">
+                <h3 style="color:white; margin-bottom: 1.5rem; text-align:center;">The 5 Invariants</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <span style="color:var(--accent-primary); font-weight:bold;">1.</span>
+                        <div><strong style="color:white;">Node Color:</strong> Every node is either Red or Black.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <span style="color:var(--accent-primary); font-weight:bold;">2.</span>
+                        <div><strong style="color:white;">Root Property:</strong> The root is always Black.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <span style="color:var(--accent-primary); font-weight:bold;">3.</span>
+                        <div><strong style="color:white;">Null Black:</strong> All null leaves are Black.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <span style="color:var(--accent-secondary); font-weight:bold;">4.</span>
+                        <div><strong style="color:white;">Red Constraint:</strong> No two Red nodes can be adjacent (Parent & Child cannot both be Red).</div>
+                    </li>
+                    <li style="display: flex; align-items: start; gap: 10px;">
+                        <span style="color:var(--accent-secondary); font-weight:bold;">5.</span>
+                        <div><strong style="color:white;">Black Height:</strong> Every path from a node to null descendants has the same number of Black nodes.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 8: Operations and Rebalancing Mechanics -->
+    <section>
+        <h2 class="animate-up">Operations & <span class="gradient-text">Rebalancing</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: The Triggers -->
+            <div class="animate-up d-100">
+                <h3 style="color:var(--accent-primary); margin-bottom:1rem;">When to fix the tree?</h3>
+                
+                <div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid var(--accent-secondary);">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:0.5rem;">
+                        <i class="fa-solid fa-circle-plus" style="color:var(--accent-secondary)"></i>
+                        <strong style="color:white; font-size:1.1rem;">Insertion</strong>
+                    </div>
+                    <p style="font-size:0.95rem; margin-bottom:0.5rem;">New nodes are always <strong style="color:#ef4444;">RED</strong>.</p>
+                    <p style="font-size:0.9rem; opacity:0.8;">If Parent is Red → <strong>Violation!</strong> (Double Red)</p>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #ef4444;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:0.5rem;">
+                        <i class="fa-solid fa-trash-can" style="color:#ef4444"></i>
+                        <strong style="color:white; font-size:1.1rem;">Deletion</strong>
+                    </div>
+                    <p style="font-size:0.95rem; margin-bottom:0.5rem;">Removing a Black node breaks <strong>Black Height</strong>.</p>
+                    <p style="font-size:0.9rem; opacity:0.8;">Requires complex "Double Black" fixing.</p>
+                </div>
+            </div>
+
+            <!-- Right Column: The Tools -->
+            <div class="animate-up d-200">
+                <h3 style="margin-bottom:1rem;">The Toolbox</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="card" style="padding:1.5rem; text-align:center;">
+                        <i class="fa-solid fa-palette" style="font-size:2rem; color:var(--accent-primary); margin-bottom:10px;"></i>
+                        <strong style="display:block; color:white;">Recoloring</strong>
+                        <span style="font-size:0.85rem; opacity:0.7;">Flip Red/Black</span>
+                    </div>
+                    <div class="card" style="padding:1.5rem; text-align:center;">
+                        <i class="fa-solid fa-arrows-rotate" style="font-size:2rem; color:var(--accent-secondary); margin-bottom:10px;"></i>
+                        <strong style="display:block; color:white;">Rotation</strong>
+                        <span style="font-size:0.85rem; opacity:0.7;">Restructure Links</span>
+                    </div>
+                </div>
+
+                <div class="card" style="padding:1.5rem;">
+                    <h4 style="color:white; margin-bottom:1rem;">Rotation Types (O(1))</h4>
+                    <ul style="list-style:none; padding:0; font-size:0.95rem;">
+                        <li style="margin-bottom:0.8rem; display:flex; gap:10px;">
+                            <i class="fa-solid fa-arrow-right" style="color:var(--accent-primary); margin-top:4px;"></i>
+                            <div>
+                                <strong style="color:white;">Single Rotation:</strong>
+                                <br>Fixes straight lines (Left-Left / Right-Right).
+                            </div>
+                        </li>
+                        <li style="display:flex; gap:10px;">
+                            <i class="fa-solid fa-shuffle" style="color:var(--accent-secondary); margin-top:4px;"></i>
+                            <div>
+                                <strong style="color:white;">Double Rotation:</strong>
+                                <br>Fixes zig-zags (Left-Right / Right-Left).
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 9: Red-Black Tree Insertion -->
+    <section>
+        <h2 class="animate-up">Red-Black Tree <span class="gradient-text">Insertion</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Process & Guarantee -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent-primary);">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">1. The Initial Insertion</h3>
+                    <ul style="padding-left: 1rem; font-size: 1rem;">
+                        <li style="margin-bottom: 0.8rem;"><strong>Step 1:</strong> Standard BST Insert.</li>
+                        <li><strong>Step 2:</strong> New node (N) is <strong style="color:#ef4444;">RED</strong>.</li>
+                    </ul>
+                    <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <i class="fa-solid fa-circle-info"></i> Coloring Red preserves Black Height.
+                    </p>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #4ade80;">
+                    <h3 style="color:#4ade80; margin-bottom: 1rem;">3. The Guarantee</h3>
+                    <p style="margin-bottom: 0.5rem;">Rebalancing is bottom-up.</p>
+                    <ul style="padding-left: 1rem; font-size: 1rem;">
+                        <li>Restores invariants in <strong>O(1)</strong> per level.</li>
+                        <li>Total Time: <strong>O(log n)</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Case Analysis -->
+            <div class="animate-up d-200">
+                <h3 style="margin-bottom: 1.5rem;">2. Violation Cases (Parent is Red)</h3>
+                
+                <!-- Case 1 -->
+                <div class="card" style="padding: 1rem; margin-bottom: 1rem; background: rgba(239, 68, 68, 0.1); border-color: #f87171;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:#f87171;">Case 1: Uncle is Red</strong>
+                        <i class="fa-solid fa-palette" style="color:#f87171;"></i>
+                    </div>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        <strong>Action:</strong> Recolor P, U, G.
+                        <br><span style="opacity:0.7;">Propagates up to Grandparent.</span>
+                    </p>
+                </div>
+
+                <!-- Case 2 -->
+                <div class="card" style="padding: 1rem; margin-bottom: 1rem; background: rgba(56, 189, 248, 0.1); border-color: var(--accent-primary);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:var(--accent-primary);">Case 2: Uncle Black (Zig-Zag)</strong>
+                        <i class="fa-solid fa-shuffle" style="color:var(--accent-primary);"></i>
+                    </div>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        <strong>Action:</strong> Rotation to form Line.
+                        <br><span style="opacity:0.7;">Transforms into Case 3.</span>
+                    </p>
+                </div>
+
+                <!-- Case 3 -->
+                <div class="card" style="padding: 1rem; background: rgba(74, 222, 128, 0.1); border-color: #4ade80;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:#4ade80;">Case 3: Uncle Black (Line)</strong>
+                        <i class="fa-solid fa-check-circle" style="color:#4ade80;"></i>
+                    </div>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        <strong>Action:</strong> Rotate & Recolor.
+                        <br><span style="opacity:0.7;">Final Fix. P becomes Black root.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 10: Red-Black Tree Deletion -->
+    <section>
+        <h2 class="animate-up">Red-Black Tree <span class="gradient-text">Deletion</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Process -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">1. Initial Deletion (BST Phase)</h3>
+                    <ul style="padding-left: 1rem; font-size: 1rem;">
+                        <li>Step 1: Standard BST Delete (Z replaced by Y).</li>
+                        <li>Step 2: Check removed node Y's color.</li>
+                    </ul>
+                    
+                    <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div style="text-align: center; padding: 0.5rem; border: 1px solid #4ade80; border-radius: 8px;">
+                            <strong style="color: #4ade80;">Red Y</strong>
+                            <br><span style="font-size: 0.8rem;">Easy! No Rebalance.</span>
+                        </div>
+                        <div style="text-align: center; padding: 0.5rem; border: 1px solid #ef4444; border-radius: 8px;">
+                            <strong style="color: #ef4444;">Black Y</strong>
+                            <br><span style="font-size: 0.8rem;">Hard! Black Height Broken.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 0.5rem;">3. Guarantee</h3>
+                    <ul style="padding-left: 1rem; font-size: 1rem;">
+                        <li>Double Black is fixed or moved up.</li>
+                        <li>Constant work per step.</li>
+                        <li>Total Time: <strong>O(log n)</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Double Black & Cases -->
+            <div class="animate-up d-200">
+                <h3 style="margin-bottom: 1rem;">2. The "Double Black" Problem</h3>
+                <p style="margin-bottom: 1.5rem; font-size: 0.95rem; opacity: 0.8;">
+                    Child X inherits Y's blackness, becoming "Double Black". We fix this by looking at sibling S.
+                </p>
+
+                <!-- Case 1 -->
+                <div class="card" style="padding: 1rem; margin-bottom: 1rem; border-left: 4px solid #f87171;">
+                    <strong style="color:#f87171;">Case 1: Sibling Red</strong>
+                    <p style="font-size: 0.9rem; margin-top: 0.2rem;">Recolor & Rotate. Transforms to Black Sibling case.</p>
+                </div>
+
+                <!-- Case 2 -->
+                <div class="card" style="padding: 1rem; margin-bottom: 1rem; border-left: 4px solid var(--accent-primary);">
+                    <strong style="color:var(--accent-primary);">Case 2: Sibling Black (No Red Children)</strong>
+                    <p style="font-size: 0.9rem; margin-top: 0.2rem;">Recolor & Propagate. DB moves up to Parent.</p>
+                </div>
+
+                <!-- Case 3/4 -->
+                <div class="card" style="padding: 1rem; border-left: 4px solid #4ade80;">
+                    <strong style="color:#4ade80;">Case 3/4: Sibling Black (Red Children)</strong>
+                    <p style="font-size: 0.9rem; margin-top: 0.2rem;">Rotate & Final Recolor. Problem Solved.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 11: 2-3 Trees Overview -->
+    <section>
+        <h2 class="animate-up">2–3 Trees <span class="gradient-text">Overview</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Definition & Why it Matters -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">What is a 2–3 Tree?</h3>
+                    <p style="margin-bottom: 1rem;">
+                        A balanced search tree where every internal node has either <strong>2</strong> or <strong>3</strong> children.
+                    </p>
+                    <ul style="padding-left: 1rem; font-size: 1rem;">
+                        <li>Maintains <strong>Perfect Balance</strong>.</li>
+                        <li>All leaves are at the same depth.</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 0.5rem;">Why This Matters?</h3>
+                    <p style="font-size: 1rem; line-height: 1.5;">
+                        They provide the conceptual basis for balanced BSTs.
+                        <br><br>
+                        <strong style="color:white;">AA Trees simulate 2–3 trees</strong> using right-leaning links and levels.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Column: Structure & Props -->
+            <div class="animate-up d-200">
+                <!-- Visualizing Node Types -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="card" style="padding: 1rem; text-align: center;">
+                        <strong style="color:var(--accent-primary); font-size: 1.2rem;">2-Node</strong>
+                        <div style="margin: 1rem auto; padding: 0.5rem 1rem; border: 1px solid white; border-radius: 8px; width: fit-content;">
+                            [ K1 ]
+                        </div>
+                        <span style="font-size: 0.85rem; opacity: 0.7;">1 Key, 2 Children</span>
+                    </div>
+                    <div class="card" style="padding: 1rem; text-align: center;">
+                        <strong style="color:#f472b6; font-size: 1.2rem;">3-Node</strong>
+                        <div style="margin: 1rem auto; padding: 0.5rem 1rem; border: 1px solid white; border-radius: 8px; width: fit-content;">
+                            [ K1 | K2 ]
+                        </div>
+                        <span style="font-size: 0.85rem; opacity: 0.7;">2 Keys, 3 Children</span>
+                    </div>
+                </div>
+
+                <!-- Properties -->
+                <div class="card">
+                    <h3 style="color:white; margin-bottom: 1rem;">Key Properties</h3>
+                    <ul style="list-style: none; padding: 0; font-size: 0.95rem;">
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-check" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Keys are sorted inside nodes.
+                        </li>
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-sitemap" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            <strong>Ordering:</strong> Left < K1 < Mid < K2 < Right
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-bolt" style="color:var(--accent-secondary); margin-right: 10px;"></i>
+                            <strong>Complexity:</strong> O(log n) for all ops.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 12: Insertion in 2-3 Trees -->
+    <section>
+        <h2 class="animate-up">Insertion in 2–3 Trees <span class="gradient-text">(Overview)</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Process -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">1. Insert into Leaf</h3>
+                    <p>New key is always inserted into a leaf node.</p>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem; margin-top: 0.5rem;">
+                        <li>If leaf is <strong>2-node</strong> → Becomes <strong>3-node</strong>.</li>
+                        <li>Simple, local operation.</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #f87171;">
+                    <h3 style="color:#f87171; margin-bottom: 1rem;">2. Handling Overflow</h3>
+                    <p>If inserting into a <strong>3-node</strong>, it becomes a temporary <strong>4-node</strong>.</p>
+                    <div style="margin-top: 1rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+                        <strong>The Split Action:</strong>
+                        <ul style="padding-left: 1rem; font-size: 0.95rem; margin-top: 0.5rem;">
+                            <li>Middle key moves <strong>UP</strong> to parent.</li>
+                            <li>Left/Right keys form separate 2-nodes.</li>
+                            <li>May propagate upward.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Result & Visual -->
+            <div class="animate-up d-200">
+                <div class="card" style="margin-bottom: 2rem; text-align: center;">
+                    <h3 style="color:white; margin-bottom: 1rem;">3. The Result</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-scale-balanced" style="color:var(--accent-secondary); margin-right: 10px;"></i>
+                            Tree remains <strong>Perfectly Balanced</strong>.
+                        </li>
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Height increases <strong>only</strong> when root splits.
+                        </li>
+                        <li>
+                            <strong style="color:white; font-size: 1.2rem;">O(log n)</strong> Complexity.
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Visual Metaphor for Split -->
+                <div class="diagram-container" style="height: 250px;">
+                    <div style="display: flex; gap: 10px; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                        <div style="border: 1px solid #f87171; padding: 5px 10px; border-radius: 4px; color: #f87171;">[ A | B | C ]</div>
+                        <i class="fa-solid fa-arrow-right" style="color: var(--text-muted);"></i>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div style="border: 1px solid var(--accent-primary); padding: 5px 10px; border-radius: 4px; margin-bottom: 5px;">[ B ]</div>
+                            <div style="display: flex; gap: 10px;">
+                                <div style="border: 1px solid white; padding: 5px 10px; border-radius: 4px;">[ A ]</div>
+                                <div style="border: 1px solid white; padding: 5px 10px; border-radius: 4px;">[ C ]</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">Visualizing the 4-node Split</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 13: Deletion in 2-3 Trees -->
+    <section>
+        <h2 class="animate-up">Deletion in 2–3 Trees <span class="gradient-text">(Overview)</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Basic Deletion Rules -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">1. Delete from Leaf</h3>
+                    <ul style="padding-left: 1rem; font-size: 1rem;">
+                        <li style="margin-bottom: 0.8rem;">
+                            <strong style="color:#4ade80;">Safe Case:</strong> Key is in a <strong>3-node</strong>.<br>
+                            <span style="font-size:0.9rem; opacity:0.7;">Remove key → Becomes 2-node.</span>
+                        </li>
+                        <li>
+                            <strong style="color:#f87171;">Hard Case:</strong> Key is in a <strong>2-node</strong>.<br>
+                            <span style="font-size:0.9rem; opacity:0.7;">Removing creates a <strong>Deficient Node</strong> (Underflow).</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 1rem;">3. Internal Nodes</h3>
+                    <p style="font-size: 1rem;">Never delete internal nodes directly.</p>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem; margin-top: 0.5rem;">
+                        <li>Replace with <strong>In-Order Successor</strong> (always a leaf).</li>
+                        <li>Delete the successor from the leaf using leaf rules.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Fixing Deficiency -->
+            <div class="animate-up d-200">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:#f87171; margin-bottom: 1rem;">2. Fixing Deficiency</h3>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <strong style="color:white;">(a) Borrowing</strong> <span style="font-size:0.8rem; color:var(--text-muted);">(Redistribution)</span>
+                        <p style="font-size:0.9rem; margin-top:0.3rem;">If sibling is a 3-node, take a key. Rotate through parent.</p>
+                    </div>
+
+                    <div>
+                        <strong style="color:white;">(b) Merging</strong> <span style="font-size:0.8rem; color:var(--text-muted);">(Fusion)</span>
+                        <p style="font-size:0.9rem; margin-top:0.3rem;">If sibling is a 2-node, merge sibling + parent key + deficient node into a 3-node.</p>
+                        <p style="font-size:0.8rem; color:#f87171; margin-top:0.2rem;"><em>Warning: Parent might become deficient.</em></p>
+                    </div>
+                </div>
+
+                <!-- Result & Complexity -->
+                <div class="card" style="text-align: center; border: 1px solid var(--accent-primary); background: rgba(56, 189, 248, 0.05);">
+                    <h4 style="color:var(--accent-primary); margin-bottom: 0.5rem;">The Result</h4>
+                    <ul style="list-style: none; padding: 0; font-size: 0.95rem;">
+                        <li>Height decreases only if root becomes empty.</li>
+                        <li style="margin-top: 0.5rem; font-weight: bold; font-size: 1.1rem;">Complexity: O(log n)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 14: Disadvantages of Insertion -->
+    <section>
+        <h2 class="animate-up">Disadvantages of <span class="gradient-text">Insertion</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Red-Black Trees -->
+            <div class="card animate-up d-100" style="border-left: 4px solid #f87171;">
+                <h3 style="color:#f87171; margin-bottom: 1.5rem;">Red-Black Trees</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color:#f87171; margin-top: 5px;"></i>
+                        <div><strong>Complexity:</strong> Many cases (recoloring + rotations) make algorithms complex.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-bug" style="color:#f87171; margin-top: 5px;"></i>
+                        <div><strong>Implementation:</strong> Harder to debug due to strict rules.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-rotate" style="color:#f87171; margin-top: 5px;"></i>
+                        <div><strong>Overhead:</strong> Constant-time overhead from extra rotations.</div>
+                    </li>
+                    <li style="display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-memory" style="color:#f87171; margin-top: 5px;"></i>
+                        <div><strong>Memory:</strong> Storage overhead for color bits.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Column: 2-3 Trees -->
+            <div class="card animate-up d-200" style="border-left: 4px solid var(--accent-primary);">
+                <h3 style="color:var(--accent-primary); margin-bottom: 1.5rem;">2–3 Trees</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-arrow-up-from-bracket" style="color:var(--accent-primary); margin-top: 5px;"></i>
+                        <div><strong>Propagation:</strong> Node splitting may propagate up to the root.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-code-branch" style="color:var(--accent-primary); margin-top: 5px;"></i>
+                        <div><strong>Structure:</strong> Handling multi-way nodes is implementation heavy.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-diagram-project" style="color:var(--accent-primary); margin-top: 5px;"></i>
+                        <div><strong>Pointers:</strong> More complex structure than binary trees.</div>
+                    </li>
+                    <li style="display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-stopwatch" style="color:var(--accent-primary); margin-top: 5px;"></i>
+                        <div><strong>Speed:</strong> Balancing rules make insertion slower in practice than simple BSTs.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 15: Disadvantages of Deletion -->
+    <section>
+        <h2 class="animate-up">Disadvantages of <span class="gradient-text">Deletion</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Red-Black Trees -->
+            <div class="card animate-up d-100" style="border-left: 4px solid #ef4444;">
+                <h3 style="color:#ef4444; margin-bottom: 1.5rem;">Red-Black Trees</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-layer-group" style="color:#ef4444; margin-top: 5px;"></i>
+                        <div><strong>Double Black:</strong> More complicated than insertion due to "double-black" cases.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-rotate-right" style="color:#ef4444; margin-top: 5px;"></i>
+                        <div><strong>Restoration:</strong> Requires multiple rotations + recolorings to restore balance.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-bug" style="color:#ef4444; margin-top: 5px;"></i>
+                        <div><strong>Maintenance:</strong> Hard to code, maintain, and debug.</div>
+                    </li>
+                    <li style="display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-memory" style="color:#ef4444; margin-top: 5px;"></i>
+                        <div><strong>Cache:</strong> Pointer-heavy operations → less cache-friendly.</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Column: 2-3 Trees -->
+            <div class="card animate-up d-200" style="border-left: 4px solid var(--accent-secondary);">
+                <h3 style="color:var(--accent-secondary); margin-bottom: 1.5rem;">2–3 Trees</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-arrow-up-right-dots" style="color:var(--accent-secondary); margin-top: 5px;"></i>
+                        <div><strong>Cascading:</strong> Merging or borrowing can cascade upward.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-shapes" style="color:var(--accent-secondary); margin-top: 5px;"></i>
+                        <div><strong>Complexity:</strong> Multi-node restructuring makes implementation complex.</div>
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-scale-unbalanced" style="color:var(--accent-secondary); margin-top: 5px;"></i>
+                        <div><strong>Balance:</strong> Maintaining perfect balance requires many cases.</div>
+                    </li>
+                    <li style="display: flex; align-items: start; gap: 10px;">
+                        <i class="fa-solid fa-diagram-project" style="color:var(--accent-secondary); margin-top: 5px;"></i>
+                        <div><strong>Pointers:</strong> More manipulation (3 children, temporary 4-nodes).</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 16: Introduction to AA Trees -->
+    <section>
+        <h2 class="animate-up">Introduction to <span class="gradient-text">AA Trees</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Context (The Complexity Problem) -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 1rem;">Why a new tree?</h3>
+                    <p style="margin-bottom: 1rem;">
+                        We know <strong style="color:white;">Red-Black</strong> and <strong style="color:white;">2-3 Trees</strong> are fast <em>(O(log n))</em>, but they are heavy to implement.
+                    </p>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem; color:var(--text-muted);">
+                        <li style="margin-bottom:0.5rem;">
+                            <strong style="color:#f87171;">RBT:</strong> Many rotation cases, messy deletion.
+                        </li>
+                        <li>
+                            <strong style="color:#f87171;">2-3 Trees:</strong> Multi-way nodes, upward splits.
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="diagram-container" style="height: 200px; border-color: var(--accent-primary);">
+                    <i class="fa-solid fa-hand-holding-heart" style="color: var(--accent-primary);"></i>
+                    <p style="font-size:1.5rem;">"AA Trees were introduced to simplify this complexity."</p>
+                </div>
+            </div>
+
+            <!-- Right Column: The AA Solution -->
+            <div class="animate-up d-200">
+                <div class="card" style="border-left: 4px solid var(--accent-primary);">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">What AA Trees Do</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                            <i class="fa-solid fa-arrow-right-long" style="color:var(--accent-primary); margin-top: 5px;"></i>
+                            <div><strong>Simulate 2-3 Tree:</strong> But force all "horizontal" links to the <strong style="color:white;">Right</strong>.</div>
+                        </li>
+                        <li style="margin-bottom: 1rem; display: flex; align-items: start; gap: 10px;">
+                            <i class="fa-solid fa-screwdriver-wrench" style="color:var(--accent-primary); margin-top: 5px;"></i>
+                            <div><strong>Only 2 Operations:</strong> Maintain balance using just <strong style="color:white;">Skew</strong> and <strong style="color:white;">Split</strong>.</div>
+                        </li>
+                        <li style="display: flex; align-items: start; gap: 10px;">
+                            <i class="fa-solid fa-ban" style="color:var(--accent-primary); margin-top: 5px;"></i>
+                            <div><strong>Less Cases:</strong> Removes many tricky RBT edge cases.</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card" style="margin-top: 2rem; background: rgba(56, 189, 248, 0.1); text-align: center;">
+                    <h3 style="color:white; margin-bottom: 0.5rem;">The Result</h3>
+                    <p style="font-size: 1rem; margin-bottom: 0;">
+                        Simpler Code. Fewer Cases. <br>
+                        Still guarantees <strong style="color:var(--accent-secondary);">O(log n)</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 17: AA Tree Node Structure -->
+    <section>
+        <h2 class="animate-up">AA Tree <span class="gradient-text">Node Structure</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Explanation -->
+            <div class="card animate-up d-100">
+                <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">Structure Breakdown</h3>
+                <ul style="padding-left: 1rem; font-size: 1rem; margin-bottom: 1.5rem;">
+                    <li style="margin-bottom: 0.5rem;"><strong>key:</strong> Data stored in the node.</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>left/right:</strong> Pointers to children.</li>
+                    <li><strong>level:</strong> Height proxy for balance.</li>
+                </ul>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border-left: 4px solid var(--accent-secondary);">
+                    <h4 style="color:var(--accent-secondary); margin-bottom: 0.5rem;">Key Points</h4>
+                    <ul style="padding-left: 1rem; font-size: 0.9rem;">
+                        <li><strong>Level</strong> replaces RBT Color.</li>
+                        <li>Horizontal links always <strong>Right-Leaning</strong>.</li>
+                        <li>Leaf Level = 1. Null = 0.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Code -->
+            <div class="animate-up d-200">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <span style="font-size:0.9rem; color:var(--text-muted);">C Implementation</span>
+                    <i class="fa-solid fa-code" style="color:var(--accent-primary);"></i>
+                </div>
+                <div class="code-block" style="font-size: 0.9rem;">
+typedef struct AANode {
+    int key;
+    struct AANode* left;
+    struct AANode* right;
+    int level;
+} AANode;
+
+// Function to create a new node
+AANode* createNode(int key) {
+    AANode* node = (AANode*)malloc(sizeof(AANode));
+    node->key = key;
+    node->left = node->right = NULL;
+    node->level = 1; // leaf node
+    return node;
+}
+                </div>
+                <div style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                    <em>"Level is the core property ensuring balance."</em>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 18: AA Tree Invariants -->
+    <section>
+        <h2 class="animate-up">AA Tree – <span class="gradient-text">Invariants</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: The Rules -->
+            <div class="card animate-up d-100" style="padding: 2rem;">
+                <h3 style="color:var(--accent-primary); margin-bottom: 1.5rem;">The 5 Rules</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <strong style="color:white; display:block; margin-bottom: 0.3rem;">1. Left Level = Parent Level - 1</strong>
+                        <span style="font-size: 0.9rem; color:var(--text-muted);">No left horizontal links allowed.</span>
+                    </li>
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <strong style="color:white; display:block; margin-bottom: 0.3rem;">2. Right Level = Parent Level (or -1)</strong>
+                        <span style="font-size: 0.9rem; color:var(--text-muted);">Right horizontal links are allowed (simulates 3-nodes).</span>
+                    </li>
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <strong style="color:white; display:block; margin-bottom: 0.3rem;">3. No 2 Consecutive Right Links</strong>
+                        <span style="font-size: 0.9rem; color:var(--text-muted);">Prevents chains of right-leaning nodes.</span>
+                    </li>
+                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <strong style="color:white; display:block; margin-bottom: 0.3rem;">4. Leaves @ Level 1</strong>
+                        <span style="font-size: 0.9rem; color:var(--text-muted);">Null pointers are treated as level = 0.</span>
+                    </li>
+                    <li style="margin-bottom: 0;">
+                        <strong style="color:white; display:block; margin-bottom: 0.3rem;">5. Path Levels Non-Increasing</strong>
+                        <span style="font-size: 0.9rem; color:var(--text-muted);">Ensures balance and keeps height ≈ log n.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Column: Summary & Impact -->
+            <div class="animate-up d-200">
+                <div class="card" style="border-left: 4px solid var(--accent-secondary); margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 1rem;">Summary</h3>
+                    <p style="font-size: 1rem; line-height: 1.6;">
+                        Invariants enforce <strong>2–3 tree structure</strong> using simple rules.
+                    </p>
+                    <ul style="padding-left: 1rem; margin-top: 1rem; font-size: 0.95rem;">
+                        <li>Violations are fixed by <strong>skew</strong> and <strong>split</strong> operations during insertion/deletion.</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="background: rgba(56, 189, 248, 0.1); text-align: center;">
+                    <h4 style="color:white; margin-bottom: 0.5rem;">Violation Handling</h4>
+                    <p style="font-size: 0.95rem; color: var(--text-muted);">
+                        Violations are fixed immediately by 
+                        <strong style="color:var(--accent-primary);">Skew</strong> and 
+                        <strong style="color:var(--accent-secondary);">Split</strong> 
+                        operations.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 19: AA Tree Operations Overview -->
+    <section>
+        <h2 class="animate-up">AA Tree – <span class="gradient-text">Operations Overview</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Main CRUD Operations -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 0.5rem;">1. Search</h3>
+                    <p style="font-size: 0.95rem; margin-bottom: 0.2rem;">Standard BST search using key comparisons.</p>
+                    <span style="font-size: 0.9rem; color:var(--accent-secondary); font-weight:bold;">Time: O(log n)</span>
+                </div>
+
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 0.5rem;">2. Insertion</h3>
+                    <p style="font-size: 0.95rem; margin-bottom: 0.2rem;">Standard BST insert + Fix violations.</p>
+                    <ul style="padding-left: 1rem; font-size: 0.9rem; color:var(--text-muted);">
+                        <li>Fix using <strong>Skew</strong> and <strong>Split</strong>.</li>
+                    </ul>
+                    <span style="font-size: 0.9rem; color:var(--accent-secondary); font-weight:bold;">Time: O(log n)</span>
+                </div>
+
+                <div class="card">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 0.5rem;">3. Deletion</h3>
+                    <p style="font-size: 0.95rem; margin-bottom: 0.2rem;">Standard BST delete + Fix imbalance.</p>
+                    <ul style="padding-left: 1rem; font-size: 0.9rem; color:var(--text-muted);">
+                        <li>Update levels, then Skew/Split.</li>
+                    </ul>
+                    <span style="font-size: 0.9rem; color:var(--accent-secondary); font-weight:bold;">Time: O(log n)</span>
+                </div>
+            </div>
+
+            <!-- Right Column: Balancing Mechanisms -->
+            <div class="animate-up d-200">
+                <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--accent-secondary); margin-bottom: 2rem;">
+                    <h3 style="color:white; margin-bottom: 1rem;">Balancing Tools</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 1rem;">
+                            <strong style="color:var(--accent-secondary);">4. Skew</strong>
+                            <br><span style="font-size: 0.9rem; color:var(--text-muted);">Right rotation. Removes left horizontal links.</span>
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <strong style="color:var(--accent-secondary);">5. Split</strong>
+                            <br><span style="font-size: 0.9rem; color:var(--text-muted);">Left rotation + Level Up. Fixes consecutive right links.</span>
+                        </li>
+                        <li>
+                            <strong style="color:var(--accent-secondary);">6. Level Update</strong>
+                            <br><span style="font-size: 0.9rem; color:var(--text-muted);">Adjusts level to match children after deletion.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card" style="text-align: center; background: rgba(56, 189, 248, 0.1);">
+                    <h4 style="color:white; margin-bottom: 0.5rem;">Summary</h4>
+                    <p style="font-size: 0.95rem;">
+                        A small set of simple operations maintains balanced BST properties efficiently.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 20: Skew Operation -->
+    <section>
+        <h2 class="animate-up">Skew Operation – <span class="gradient-text">Concept</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Explanation -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">Purpose</h3>
+                    <p style="margin-bottom: 1rem;">
+                        Removes <strong>Left Horizontal Links</strong>.
+                    </p>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem; color: var(--text-muted);">
+                        <li>Maintains the invariant: "No left horizontal links allowed".</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 0.5rem;">When to Use?</h3>
+                    <p style="font-size: 1rem;">
+                        If a node’s <strong>Left Child</strong> has the <strong>same level</strong> as the node itself.
+                    </p>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h4 style="color:white; margin-bottom: 0.5rem;">Key Points</h4>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem;">
+                        <li>Only fixes left horizontal links.</li>
+                        <li>Often followed by <strong>Split</strong>.</li>
+                        <li>Simple, local O(1) operation.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Visual & Mechanism -->
+            <div class="animate-up d-200">
+                <div class="card" style="margin-bottom: 2rem; text-align: center;">
+                    <h3 style="color:white; margin-bottom: 1rem;">How It Works</h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
+                        <strong style="color:var(--accent-primary);">Right Rotation</strong> around the parent.
+                    </p>
+                    
+                    <img src="Skew.png" class="diagram-container" style="height: 250px; margin-top: auto; border-color: var(--accent-secondary);">
+                    <i class="fa-solid fa-scale-balanced" style="color:var(--accent-secondary);"></i>
+            </img>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 21: Skew Operation - C Code & Complexity -->
+    <section>
+        <h2 class="animate-up">Skew Operation – <span class="gradient-text">C Code & Complexity</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Complexity & Summary -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 1rem;">Time Complexity</h3>
+                    <p style="font-size: 1.2rem; margin-bottom: 0.5rem;"><strong style="color:white;">O(1)</strong></p>
+                    <p style="font-size: 1rem; color: var(--text-muted);">Skew is a single rotation, independent of tree size.</p>
+                </div>
+
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="color:white; margin-bottom: 1rem;">Summary</h3>
+                    <ul style="list-style: none; padding: 0; font-size: 1rem; color: var(--text-muted);">
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-check" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Skew is simple, fast, and local.
+                        </li>
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-check" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Fixes left horizontal link violations.
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-check" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Essential step during insertion and deletion.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: C Code Block -->
+            <div class="animate-up d-200">
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text-muted);">skew.c</span>
+                        <div style="display: flex; gap: 5px;">
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #eab308;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+                        </div>
+                    </div>
+                    <div class="code-block" style="margin: 0; border: none; border-radius: 0; box-shadow: none;">
+AANode* skew(AANode* node) {
+    if (node == NULL) return node;
+
+    if (node->left && node->left->level == node->level) {
+        // Right rotation
+        AANode* left = node->left;
+        node->left = left->right;
+        left->right = node;
+        return left; // new root of this subtree
+    }
+
+    return node; // no skew needed
+}
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted); font-style: italic;">
+                    Maintains BST structure and AA Tree invariants locally.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 22: Split Operation - Concept & Explanation -->
+    <section>
+        <h2 class="animate-up">Split Operation – <span class="gradient-text">Concept</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Explanation -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">Purpose</h3>
+                    <p style="margin-bottom: 1rem;">
+                        Removes <strong>Consecutive Right Horizontal Links</strong>.
+                    </p>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem; color: var(--text-muted);">
+                        <li>Maintains the invariant: "No two consecutive right horizontal links allowed".</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 0.5rem;">When to Use?</h3>
+                    <p style="font-size: 1rem;">
+                        If a node’s <strong>Right Child</strong> and <strong>Right-Right Grandchild</strong> are at the same level.
+                    </p>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h4 style="color:white; margin-bottom: 0.5rem;">Key Points</h4>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem;">
+                        <li>Fixes right horizontal link violations.</li>
+                        <li>Often applied after <strong>Skew</strong>.</li>
+                        <li>Ensures AA Tree remains balanced.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Visual & Mechanism -->
+            <div class="animate-up d-200">
+                <div class="card" style="margin-bottom: 2rem; text-align: center;">
+                    <h3 style="color:white; margin-bottom: 1rem;">How It Works</h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
+                        <strong style="color:var(--accent-primary);">Left Rotation</strong> + <strong style="color:var(--accent-secondary);">Level Increment</strong>.
+                    </p>
+                    
+                    <img src="Split.png" class="diagram-container" style="height: 250px; margin-top: auto; border-color: var(--accent-secondary);">
+                    <i class="fa-solid fa-scale-balanced" style="color:var(--accent-secondary);"></i>
+            </img>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 23: Split Operation - C Code & Complexity -->
+    <section>
+        <h2 class="animate-up">Split Operation – <span class="gradient-text">C Code & Complexity</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Complexity & Summary -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 1rem;">Time Complexity</h3>
+                    <p style="font-size: 1.2rem; margin-bottom: 0.5rem;"><strong style="color:white;">O(1)</strong></p>
+                    <p style="font-size: 1rem; color: var(--text-muted);">Split is a single rotation, independent of tree size.</p>
+                </div>
+
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="color:white; margin-bottom: 1rem;">Summary</h3>
+                    <ul style="list-style: none; padding: 0; font-size: 1rem; color: var(--text-muted);">
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-check" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Split is fast and local.
+                        </li>
+                        <li style="margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-check" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Fixes consecutive right links.
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-check" style="color:var(--accent-primary); margin-right: 10px;"></i>
+                            Works together with skew during insertion/deletion.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: C Code Block -->
+            <div class="animate-up d-200">
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text-muted);">split.c</span>
+                        <div style="display: flex; gap: 5px;">
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #eab308;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+                        </div>
+                    </div>
+                    <div class="code-block" style="margin: 0; border: none; border-radius: 0; box-shadow: none;">
+AANode* split(AANode* node) {
+    if (node == NULL) return node;
+
+    if (node->right && node->right->right &&
+        node->level == node->right->right->level) {
+        // Left rotation
+        AANode* right = node->right;
+        node->right = right->left;
+        right->left = node;
+        right->level += 1; // increment level
+        return right; // new root of this subtree
+    }
+
+    return node; // no split needed
+}
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted); font-style: italic;">
+                    Maintains BST structure and AA Tree invariants locally.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 24: AA Tree Insertion (Concept & Cases) -->
+    <section>
+        <h2 class="animate-up">Insertion – <span class="gradient-text">Concept & Cases</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Overview & Steps -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">Overview</h3>
+                    <p style="font-size: 0.95rem; margin-bottom: 0.5rem;">
+                        1. Insert key like in a standard <strong>BST</strong>.
+                    </p>
+                    <p style="font-size: 0.95rem;">
+                        2. Fix violations on recursion return:
+                    </p>
+                    <ul style="padding-left: 1rem; font-size: 0.9rem; color:var(--text-muted); margin-top: 0.5rem;">
+                        <li>Left Horizontal Link &rarr; <strong style="color:var(--accent-primary);">Skew</strong></li>
+                        <li>Consecutive Right Links &rarr; <strong style="color:var(--accent-secondary);">Split</strong></li>
+                    </ul>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 1rem;">Step-by-Step</h3>
+                    <ol style="padding-left: 1rem; font-size: 0.95rem; line-height: 1.6;">
+                        <li><strong>BST Insert:</strong> Recursive placement.</li>
+                        <li><strong>Skew:</strong> If <code>left->level == level</code>.</li>
+                        <li><strong>Split:</strong> If <code>right->right->level == level</code>.</li>
+                        <li><strong>Return:</strong> Update parent pointers.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Right Column: Cases & Result -->
+            <div class="animate-up d-200">
+                <h3 style="margin-bottom: 1rem;">Violation Cases</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="card" style="padding: 1rem; text-align: center; border: 1px solid #4ade80;">
+                        <strong style="color:#4ade80;">Case 1</strong>
+                        <br><span style="font-size: 0.85rem;">No Violation</span>
+                    </div>
+                    <div class="card" style="padding: 1rem; text-align: center; border: 1px solid var(--accent-primary);">
+                        <strong style="color:var(--accent-primary);">Case 2</strong>
+                        <br><span style="font-size: 0.85rem;">Skew Only</span>
+                    </div>
+                    <div class="card" style="padding: 1rem; text-align: center; border: 1px solid var(--accent-secondary);">
+                        <strong style="color:var(--accent-secondary);">Case 3</strong>
+                        <br><span style="font-size: 0.85rem;">Split Only</span>
+                    </div>
+                    <div class="card" style="padding: 1rem; text-align: center; border: 1px solid #ef4444;">
+                        <strong style="color:#ef4444;">Case 4</strong>
+                        <br><span style="font-size: 0.85rem;">Skew then Split</span>
+                    </div>
+                </div>
+
+                <div class="card" style="background: rgba(56, 189, 248, 0.1); text-align: center;">
+                    <h4 style="color:white; margin-bottom: 0.5rem;">Result</h4>
+                    <p style="font-size: 0.95rem; color: var(--text-muted);">
+                        Tree remains balanced.<br>
+                        Operations stay <strong>O(log n)</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 25: AA Tree Insertion (Code & Proof) -->
+    <section>
+        <h2 class="animate-up">Insertion – <span class="gradient-text">Code & Proof</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Complexity Proof -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">Time Complexity Proof</h3>
+                    <ul style="padding-left: 1rem; font-size: 1rem; margin-bottom: 1.5rem;">
+                        <li style="margin-bottom: 0.5rem;"><strong>Recursion:</strong> Follows height <em>h</em> &rarr; O(h)</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Skew + Split:</strong> O(1) per node (local)</li>
+                        <li><strong>AA Tree Height:</strong> Balanced &rarr; h = O(log n)</li>
+                    </ul>
+                    
+                    <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; border: 1px solid var(--accent-primary);">
+                        <span style="font-family: 'JetBrains Mono', monospace; color: white; font-size: 1.1rem;">
+                            Total Time = O(log n)
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 0.5rem;">Key Takeaways</h3>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem;">
+                        <li style="margin-bottom: 0.5rem;">Skew/Split are <strong>constant time</strong>.</li>
+                        <li style="margin-bottom: 0.5rem;">Recursion dominates the cost.</li>
+                        <li>Guarantees <strong>O(log n)</strong> worst-case.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: C Code -->
+            <div class="animate-up d-200">
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text-muted);">insert.c</span>
+                        <div style="display: flex; gap: 5px;">
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #eab308;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+                        </div>
+                    </div>
+                    <div class="code-block" style="margin: 0; border: none; border-radius: 0; box-shadow: none;">
+AANode* insert(AANode* node, int key) {
+    if (node == NULL)
+        return createNode(key); // new leaf
+
+    if (key < node->key)
+        node->left = insert(node->left, key);
+    else if (key > node->key)
+        node->right = insert(node->right, key);
+    else
+        return node; // duplicate keys not allowed
+
+    node = skew(node);  // fix left horizontal link
+    node = split(node); // fix consecutive right links
+    return node;
+}
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                    <em>"Standard BST insert + Automatic Rebalancing"</em>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 26: Image Placeholder (Insertion Visualization 1) -->
+    <section>
+        <h2 class="animate-up">Visualizing <span class="gradient-text">Insertion</span> (Part 1)</h2>
+        <div class="animate-up d-100" style="width: 100%; max-width: 1000px;">
+            <div class="diagram-container" style="height: 500px; border-style: dashed; border-width: 3px; border-color: var(--accent-primary);">
+                <img src="Insert1.png" class="diagram-container" style="height: 5000px; margin-top: auto; border-color: var(--accent-secondary);">
+                </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 27: Image Placeholder (Insertion Visualization 2) -->
+    <section>
+        <h2 class="animate-up">Visualizing <span class="gradient-text">Insertion</span> (Part 2)</h2>
+        <div class="animate-up d-100" style="width: 100%; max-width: 1000px;">
+            <div class="diagram-container" style="height: 500px; border-style: dashed; border-width: 3px; border-color: var(--accent-primary);">
+                <img src="Insert2.png" class="diagram-container" style="height: 5000px; margin-top: auto; border-color: var(--accent-secondary);">
+                </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 28: AA Tree Deletion (Concept & Cases) -->
+    <section>
+        <h2 class="animate-up">Deletion – <span class="gradient-text">Concept & Steps</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Overview & Violations -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">Overview</h3>
+                    <p style="margin-bottom: 1rem;">
+                        Delete key like a standard BST. Then fix invariants.
+                    </p>
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border-left: 4px solid #ef4444;">
+                        <strong style="color: #ef4444; display: block; margin-bottom: 0.5rem;">Violations to Fix:</strong>
+                        <ul style="padding-left: 1rem; font-size: 0.95rem; color: var(--text-muted);">
+                            <li>Left Horizontal Links &rarr; <strong>Skew</strong></li>
+                            <li>Consecutive Right Links &rarr; <strong>Split</strong></li>
+                            <li>Level Decrease &rarr; <strong>Update Level</strong></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card" style="text-align: center; background: rgba(56, 189, 248, 0.1); border-color: var(--accent-secondary);">
+                    <h4 style="color:white; margin-bottom: 0.5rem;">Result</h4>
+                    <p style="font-size: 0.95rem; color: var(--text-muted);">
+                        Tree remains balanced.<br>
+                        Complexity stays <strong>O(log n)</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Column: Step-by-Step Process -->
+            <div class="animate-up d-200">
+                <h3 style="margin-bottom: 1rem;">Step-by-Step Process</h3>
+                
+                <div class="card" style="margin-bottom: 1rem; border-left: 4px solid var(--accent-secondary);">
+                    <strong style="color:var(--accent-secondary);">1. BST Deletion</strong>
+                    <ul style="padding-left: 1rem; font-size: 0.9rem; margin-top: 0.5rem;">
+                        <li>Leaf: Remove it.</li>
+                        <li>One Child: Replace with child.</li>
+                        <li>Two Children: Replace with successor.</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="margin-bottom: 1rem; border-left: 4px solid var(--accent-primary);">
+                    <strong style="color:var(--accent-primary);">2. Level Update</strong>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        Set level = <code>min(left, right) + 1</code>.
+                        <br>Ensures consistency with children.
+                    </p>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #4ade80;">
+                    <strong style="color:#4ade80;">3. Skew & Split</strong>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        Apply Skew (fix left links) then Split (fix right chains).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 29: AA Tree Deletion (Code & Proof) -->
+    <section>
+        <h2 class="animate-up">Deletion – <span class="gradient-text">Code & Proof</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Proof & Takeaways -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">Time Complexity Proof</h3>
+                    <ul style="padding-left: 1rem; font-size: 1rem; margin-bottom: 1.5rem;">
+                        <li style="margin-bottom: 0.5rem;"><strong>Recursion:</strong> BST search cost &rarr; O(h)</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Fixes:</strong> Level update, Skew, Split are O(1) per node.</li>
+                        <li><strong>Height:</strong> h = O(log n)</li>
+                    </ul>
+                    <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; border: 1px solid var(--accent-primary);">
+                        <span style="font-family: 'JetBrains Mono', monospace; color: white; font-size: 1.1rem;">
+                            Total Time = O(log n)
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 0.5rem;">Key Takeaways</h3>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem;">
+                        <li style="margin-bottom: 0.5rem;">Involves local rotations + level updates.</li>
+                        <li>Simpler than Red-Black Tree deletion (fewer edge cases).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: C Code -->
+            <div class="animate-up d-200">
+                <div class="card" style="padding: 0; overflow: hidden; height: 550px; display: flex; flex-direction: column;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text-muted);">delete.c</span>
+                        <div style="display: flex; gap: 5px;">
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #eab308;"></div>
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+                        </div>
+                    </div>
+                    <div class="code-block" style="margin: 0; border: none; border-radius: 0; box-shadow: none; height: 100%; overflow-y: auto;">
+AANode* decreaseLevel(AANode* node) {
+    int shouldBe = 1 + ((node->left ? node->left->level : 0) <
+                        (node->right ? node->right->level : 0)
+                        ? node->left->level : node->right->level);
+    if (shouldBe < node->level) {
+        node->level = shouldBe;
+        if (node->right && shouldBe < node->right->level)
+            node->right->level = shouldBe;
+    }
+    return node;
+}
+
+AANode* delete(AANode* node, int key) {
+    if (!node) return NULL;
+
+    if (key < node->key)
+        node->left = delete(node->left, key);
+    else if (key > node->key)
+        node->right = delete(node->right, key);
+    else { // key found
+        if (!node->left && !node->right) { // leaf
+            free(node); return NULL;
+        } else if (!node->left) { // one child
+            AANode* temp = node->right; free(node); return temp;
+        } else if (!node->right) { // one child
+            AANode* temp = node->left; free(node); return temp;
+        } else { // two children
+            AANode* succ = node->right;
+            while (succ->left) succ = succ->left;
+            node->key = succ->key;
+            node->right = delete(node->right, succ->key);
+        }
+    }
+
+    node = decreaseLevel(node);
+    node = skew(node);
+    if (node->right) node->right = skew(node->right);
+    if (node->right && node->right->right)
+        node->right->right = skew(node->right->right);
+
+    node = split(node);
+    if (node->right) node->right = split(node->right);
+
+    return node;
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 30: Image Placeholder (Deletion Visualization 1) -->
+    <section>
+        <h2 class="animate-up">Visualizing <span class="gradient-text">Deletion</span> (Part 1)</h2>
+        <div class="animate-up d-100" style="width: 100%; max-width: 1000px;">
+            <div class="diagram-container" style="height: 500px; border-style: dashed; border-width: 3px; border-color: var(--accent-primary);">
+                <img src="Delete1.png" class="diagram-container" style="height: 500px; margin-top: auto; border-color: var(--accent-secondary);">
+                </div>
+        </div>
+    </section>
+    <!-- SLIDE 31: Image Placeholder (Deletion Visualization 2) -->
+    <section>
+        <h2 class="animate-up">Visualizing <span class="gradient-text">Deletion</span> (Part 2)</h2>
+        <div class="animate-up d-100" style="width: 100%; max-width: 1000px;">
+            <div class="diagram-container" style="height: 500px; border-style: dashed; border-width: 3px; border-color: var(--accent-primary);">
+                <img src="Delete2.png" class="diagram-container" style="height: 500px; margin-top: auto; border-color: var(--accent-secondary);">
+                </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 31: Image Placeholder (Deletion Visualization 2) -->
+    <section>
+        <h2 class="animate-up">Visualizing <span class="gradient-text">Deletion</span> (Part 3)</h2>
+        <div class="animate-up d-100" style="width: 100%; max-width: 1000px;">
+            
+            <div class="diagram-container" style="height: 500px; border-style: dashed; border-width: 3px; border-color: var(--accent-primary);">
+                <img src="Delete3.png" class="diagram-container" style="height: 500px; margin-top: auto; border-color: var(--accent-secondary);">
+                </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 32: Time Complexity Analysis -->
+    <section>
+        <h2 class="animate-up">Time Complexity <span class="gradient-text">Analysis</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Preliminaries & Insertion -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="color:var(--accent-primary); margin-bottom: 1rem;">1. Preliminaries</h3>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem; margin-bottom: 1rem;">
+                        <li>Height <em>h</em> is <strong>O(log n)</strong>.</li>
+                        <li>Simulates 2–3 tree: <code>h &le; 2 &middot; log<sub>2</sub>(n+1)</code></li>
+                    </ul>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">
+                        Operations involve traversing path (O(h)) + local rotations (O(1)).
+                    </p>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <h3 style="color:var(--accent-secondary); margin-bottom: 1rem;">2. Insertion</h3>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem;">
+                        <li><strong>Step 1 (Search):</strong> O(h)</li>
+                        <li><strong>Step 2 (Skew/Split):</strong> O(1) per level &times; h levels</li>
+                    </ul>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
+                        <strong style="color:white;">T<sub>insert</sub> = O(h) = O(log n)</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Deletion & Insights -->
+            <div class="animate-up d-200">
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid #ef4444;">
+                    <h3 style="color:#ef4444; margin-bottom: 1rem;">3. Deletion</h3>
+                    <ul style="padding-left: 1rem; font-size: 0.95rem;">
+                        <li><strong>Step 1 (Search):</strong> O(h)</li>
+                        <li><strong>Step 2 (Level Update):</strong> O(1) per level</li>
+                        <li><strong>Step 3 (Skew/Split):</strong> O(1) per level</li>
+                    </ul>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
+                        <strong style="color:white;">T<sub>delete</sub> = O(h) = O(log n)</strong>
+                    </div>
+                </div>
+
+                <div class="card" style="background: rgba(56, 189, 248, 0.1);">
+                    <h4 style="color:white; margin-bottom: 0.5rem;">Key Insights</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">
+                        Height traversal dominates. Rotations are constant overhead.
+                        <br><strong>Worst-case is guaranteed O(log n).</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 33: Applications -->
+    <section>
+        <h2 class="animate-up">Applications of <span class="gradient-text">AA Trees</span></h2>
+        <div class="animate-up d-100" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; width: 100%; max-width: 1200px;">
+            
+            <!-- App 1 -->
+            <div class="card" style="border-top: 4px solid var(--accent-primary);">
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-database" style="color:var(--accent-primary); margin-right: 10px;"></i>Database Indexing</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Efficiently maintains sorted keys with O(log n) CRUD operations.
+                </p>
+            </div>
+
+            <!-- App 2 -->
+            <div class="card" style="border-top: 4px solid var(--accent-secondary);">
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-memory" style="color:var(--accent-secondary); margin-right: 10px;"></i>In-Memory Maps</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Dictionaries storing key-value pairs with balanced search properties.
+                </p>
+            </div>
+
+            <!-- App 3 -->
+            <div class="card" style="border-top: 4px solid #4ade80;">
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-arrow-down-short-wide" style="color:#4ade80; margin-right: 10px;"></i>Priority Queues</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Used where insertion and deletion frequency demands balanced performance.
+                </p>
+            </div>
+
+            <!-- App 4 -->
+            <div class="card" style="border-top: 4px solid #facc15;">
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-microchip" style="color:#facc15; margin-right: 10px;"></i>Systems Programming</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Easier to implement than Red-Black Trees in kernels or compilers.
+                </p>
+            </div>
+
+            <!-- App 5 -->
+            <div class="card" style="border-top: 4px solid #ef4444;">
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-clock" style="color:#ef4444; margin-right: 10px;"></i>Real-time Systems</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Applications needing predictable, guaranteed O(log n) operations.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 34: Disadvantages -->
+    <section>
+        <h2 class="animate-up">Disadvantages of <span class="gradient-text">AA Trees</span></h2>
+        <div class="grid-2">
+            <!-- Left Column: Structural Issues -->
+            <div class="animate-up d-100">
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid #f87171;">
+                    <h3 style="color:#f87171; margin-bottom: 1rem;">1. Taller than Red-Black</h3>
+                    <p style="font-size: 1rem; color: var(--text-muted);">
+                        Can be flatter (more spread out) but in worst cases slightly taller due to right-leaning restriction.
+                        <br><span style="color:white;">Result: Slightly slower search.</span>
+                    </p>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #f87171;">
+                    <h3 style="color:#f87171; margin-bottom: 1rem;">2. Memory Overhead</h3>
+                    <p style="font-size: 1rem; color: var(--text-muted);">
+                        Requires an extra <code>int level</code> field per node.
+                        <br><span style="color:white;">Increases memory usage vs simple BST.</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Column: Implementation Issues -->
+            <div class="animate-up d-200">
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid #facc15;">
+                    <h3 style="color:#facc15; margin-bottom: 1rem;">3. Still Complex</h3>
+                    <p style="font-size: 1rem; color: var(--text-muted);">
+                        While simpler than Red-Black, Skew/Split logic is harder than standard BSTs or AVL trees (conceptually).
+                    </p>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #facc15;">
+                    <h3 style="color:#facc15; margin-bottom: 1rem;">4. Adoption</h3>
+                    <p style="font-size: 1rem; color: var(--text-muted);">
+                        Not widely used in standard libraries (STL uses Red-Black).
+                        <br><span style="color:white;">Deletion logic (level adjustment) is involved.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 35: Conclusion -->
+    <section>
+        <h2 class="animate-up">Conclusion</h2>
+        <p class="animate-up d-100" style="font-size: 1.5rem; margin-bottom: 3rem; text-align: center; color: var(--text-muted);">
+            Why use AA Trees despite the disadvantages?
+        </p>
+
+        <div class="animate-up d-200" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; width: 100%; max-width: 1100px;">
+            <div class="card">
+                <h3 style="color:var(--accent-primary);">1. Simplicity</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Removes complex Red-Black cases. Only 2 operations: <strong>Skew</strong> & <strong>Split</strong>.
+                </p>
+            </div>
+            <div class="card">
+                <h3 style="color:var(--accent-secondary);">2. Performance</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Provides the same asymptotic <strong>O(log n)</strong> performance as industry standards.
+                </p>
+            </div>
+            <div class="card">
+                <h3 style="color:#4ade80;">3. Reliability</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Deterministic balancing mimicking <strong>2-3 Trees</strong>.
+                </p>
+            </div>
+            <div class="card">
+                <h3 style="color:#facc15;">4. Education</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted);">
+                    Ideal for teaching balanced trees without the "implementation nightmare" of RBTs.
+                </p>
+            </div>
+        </div>
+
+        <div class="animate-up d-300" style="margin-top: 4rem; padding: 2rem; background: rgba(56, 189, 248, 0.1); border: 1px solid var(--accent-primary); border-radius: 16px; text-align: center; max-width: 900px;">
+            <p style="font-size: 1.2rem; color: white; margin: 0;">
+                "AA Trees offer a powerful balance between <strong style="color:var(--accent-primary);">Simplicity</strong> and <strong style="color:var(--accent-secondary);">Efficiency</strong>."
+            </p>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                const slides = document.querySelectorAll('section');
+                const index = Array.from(slides).indexOf(entry.target);
+                const progress = ((index + 1) / slides.length) * 100;
+                document.getElementById('progressBar').style.width = `${progress}%`;
+            } else {
+                entry.target.classList.remove('active');
+            }
+        });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('section').forEach((section) => { observer.observe(section); });
+</script>
+</body>
+</html>
